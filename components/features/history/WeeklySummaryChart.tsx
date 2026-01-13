@@ -1,11 +1,12 @@
 /**
  * 주간 감정 요약 그래프 컴포넌트
  * 부드러운 선 그래프로 표시 (기분 좋을 때 위로, 나쁠 때 아래로)
+ * 애니메이션 효과 포함
  */
 
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
-import Svg, { Path, Circle, G } from 'react-native-svg';
+import React, { useMemo, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Dimensions, Animated, Easing } from 'react-native';
+import Svg, { Path, Circle } from 'react-native-svg';
 import type { MoodEntry } from '@/types/history';
 import { colors } from '@/design/tokens/colors';
 import { spacing } from '@/design/tokens/spacing';
@@ -17,12 +18,20 @@ interface WeeklySummaryChartProps {
 
 export function WeeklySummaryChart({ entries }: WeeklySummaryChartProps) {
   const screenWidth = Dimensions.get('window').width;
-  const containerPadding = spacing.xxl * 2; // 좌우 패딩
+  // 컨테이너 패딩: history 화면의 padding (spacing.xxl) + 컴포넌트 내부 padding (spacing.lg)
+  const containerPadding = spacing.xxl * 2 + spacing.lg * 2;
   const chartWidth = screenWidth - containerPadding;
   const chartHeight = 120;
   const padding = spacing.md;
   const graphWidth = chartWidth - padding * 2;
   const graphHeight = chartHeight - padding * 2 - 30; // 하단 라벨 공간
+
+  // 애니메이션 값
+  const pathProgress = useRef(new Animated.Value(0)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+  const pointAnimations = useRef(
+    Array.from({ length: 7 }, () => new Animated.Value(0))
+  ).current;
 
   // 요일별 평균 감정 점수 계산 (-1 ~ 1)
   const dayScores = useMemo(() => {
@@ -104,53 +113,106 @@ export function WeeklySummaryChart({ entries }: WeeklySummaryChartProps) {
     return path;
   };
 
+  const fullPath = createSmoothPath();
+
+  // 애니메이션 시작
+  useEffect(() => {
+    // 초기화
+    pathProgress.setValue(0);
+    opacityAnim.setValue(0);
+    pointAnimations.forEach(anim => anim.setValue(0));
+
+    // 선 그래프 그리기 애니메이션
+    Animated.sequence([
+      Animated.timing(opacityAnim, {
+        toValue: 1,
+        duration: 300,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: false,
+      }),
+      Animated.timing(pathProgress, {
+        toValue: 1,
+        duration: 1200,
+        easing: Easing.bezier(0.4, 0, 0.2, 1),
+        useNativeDriver: false,
+      }),
+    ]).start();
+
+    // 데이터 포인트 순차적 나타나기
+    pointAnimations.forEach((anim, index) => {
+      Animated.timing(anim, {
+        toValue: 1,
+        duration: 300,
+        delay: 800 + index * 100, // 선 그리기 후 순차적으로
+        easing: Easing.out(Easing.back(1.5)),
+        useNativeDriver: false,
+      }).start();
+    });
+  }, [entries, pathProgress, opacityAnim, pointAnimations]);
+
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, { opacity: opacityAnim }]}>
       <View style={styles.chartContainer}>
-        <Svg 
-          width={chartWidth} 
-          height={chartHeight} 
-          style={styles.svg}
-          viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-          preserveAspectRatio="xMidYMid meet"
-        >
-          {/* 중간선 (0 기준선) */}
-          <Path
-            d={`M ${padding} ${padding + graphHeight / 2} L ${padding + graphWidth} ${padding + graphHeight / 2}`}
-            stroke={colors.border}
-            strokeWidth={1}
-            strokeDasharray="4,4"
-            opacity={0.5}
-          />
+        <View style={styles.svgWrapper}>
+          <Svg 
+            width="100%" 
+            height={chartHeight} 
+            style={styles.svg}
+            viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+            preserveAspectRatio="xMidYMid meet"
+          >
+            {/* 중간선 (0 기준선) */}
+            <Path
+              d={`M ${padding} ${padding + graphHeight / 2} L ${padding + graphWidth} ${padding + graphHeight / 2}`}
+              stroke={colors.border}
+              strokeWidth={1}
+              strokeDasharray="4,4"
+              opacity={0.5}
+            />
 
-          {/* 부드러운 선 그래프 */}
-          <Path
-            d={createSmoothPath()}
-            fill="none"
-            stroke={colors.primary}
-            strokeWidth={2.5}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
+            {/* 부드러운 선 그래프 */}
+            <Path
+              d={fullPath}
+              fill="none"
+              stroke={colors.primary}
+              strokeWidth={2.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </Svg>
 
-          {/* 데이터 포인트 */}
+          {/* 데이터 포인트 (애니메이션) - SVG 위에 오버레이 */}
           {points.map((point, index) => {
             // score가 0이 아니면 포인트 표시
             if (Math.abs(point.score) < 0.01) return null;
             
+            const scale = pointAnimations[index].interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, 1],
+            });
+
+            const pointOpacity = pointAnimations[index];
+            
             return (
-              <Circle
+              <Animated.View
                 key={index}
-                cx={point.x}
-                cy={point.y}
-                r={4}
-                fill={colors.primary}
-                stroke={colors.backgroundLight}
-                strokeWidth={2}
-              />
+                style={[
+                  styles.pointWrapper,
+                  {
+                    left: point.x - 4,
+                    top: point.y - 4,
+                    transform: [{ scale }],
+                    opacity: pointOpacity,
+                  },
+                ]}
+              >
+                <View style={styles.pointCircle}>
+                  <View style={styles.pointInner} />
+                </View>
+              </Animated.View>
             );
           })}
-        </Svg>
+        </View>
 
         {/* 요일 라벨 */}
         <View style={styles.labelsContainer}>
@@ -178,7 +240,7 @@ export function WeeklySummaryChart({ entries }: WeeklySummaryChartProps) {
           })}
         </View>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -191,8 +253,32 @@ const styles = StyleSheet.create({
   chartContainer: {
     alignItems: 'center',
   },
-  svg: {
+  svgWrapper: {
+    position: 'relative',
+    width: '100%',
+    height: 120,
     marginBottom: spacing.md,
+    overflow: 'hidden',
+  },
+  svg: {
+    width: '100%',
+    height: '100%',
+  },
+  pointWrapper: {
+    position: 'absolute',
+    width: 8,
+    height: 8,
+  },
+  pointCircle: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.primary,
+    borderWidth: 2,
+    borderColor: colors.backgroundLight,
+  },
+  pointInner: {
+    flex: 1,
   },
   labelsContainer: {
     flexDirection: 'row',
