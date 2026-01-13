@@ -1,50 +1,89 @@
-# Welcome to your Expo app 👋
+# MoodPick App 💝
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+감정 상태를 입력하면 AI가 맞춤 추천(메시지, 노래, 향)을 해주는 모바일 앱입니다.
 
-## Get started
+## 주요 기능
 
-1. Install dependencies
+- ✨ 감정 기반 AI 추천
+- 🎵 맞춤 노래 추천
+- 🌸 맞춤 향 추천
+- 💫 귀여운 UI/UX
+- 🎨 부드러운 애니메이션
+
+## 시작하기
+
+1. 의존성 설치
 
    ```bash
    npm install
    ```
 
-2. Start the app
+2. 앱 실행
 
    ```bash
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+3. API 서버 설정
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+   `lib/api.ts` 파일에서 API_BASE_URL을 설정하세요.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+   ```typescript
+   export const API_BASE_URL = "https://your-api-url";
+   ```
 
-## Get a fresh project
+## 프로젝트 구조
 
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+app/
+  ├── index.tsx          # 메인 화면 (감정 입력)
+  ├── result.tsx         # 결과 화면 (AI 추천 표시)
+  └── (tabs)/           # 탭 네비게이션
+lib/
+  └── api.ts            # API 설정
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## API 스펙
 
-## Learn more
+자세한 API 스펙은 [API_SPEC.md](./API_SPEC.md)를 참고하세요.
 
-To learn more about developing your project with Expo, look at the following resources:
+### 기본 요청 형식
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```json
+POST /ai/recommend
+{
+  "text": "오늘은 너무 지치고, 위로가 필요해"
+}
+```
 
-## Join the community
+### 응답 형식
 
-Join our community of developers creating universal apps.
+```json
+{
+  "result": "추천 메시지",
+  "song": {
+    "title": "노래 제목",
+    "artist": "아티스트명",
+    "reason": "추천 이유 (선택)"
+  },
+  "scent": {
+    "name": "향 이름",
+    "reason": "추천 이유 (선택)"
+  }
+}
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## 기술 스택
+
+- React Native
+- Expo Router
+- TypeScript
+- React Native Animated
+
+## 개발
+
+프로젝트는 [file-based routing](https://docs.expo.dev/router/introduction)을 사용합니다.
+
+## 라이선스
+
+Private
