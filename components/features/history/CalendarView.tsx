@@ -157,9 +157,10 @@ const styles = StyleSheet.create({
   weekHeader: {
     flexDirection: 'row',
     marginBottom: spacing.sm,
+    justifyContent: 'space-between',
   },
   weekDay: {
-    flex: 1,
+    width: '14.28%',
     alignItems: 'center',
   },
   weekDayText: {
@@ -170,6 +171,7 @@ const styles = StyleSheet.create({
   calendarGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    justifyContent: 'space-between',
   },
   dayCell: {
     width: '14.28%',
@@ -177,7 +179,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 8,
-    margin: 2,
+    marginBottom: spacing.xs,
   },
   selectedDay: {
     backgroundColor: colors.primary,
