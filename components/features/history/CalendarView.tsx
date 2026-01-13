@@ -61,8 +61,11 @@ export function CalendarView({
   }, [startingDayOfWeek, daysInMonth]);
 
   const formatDate = (day: number): string => {
-    const date = new Date(currentYear, currentMonth, day);
-    return date.toISOString().split('T')[0];
+    // 로컬 날짜를 직접 포맷하여 타임존 문제 방지
+    const year = currentYear;
+    const month = String(currentMonth + 1).padStart(2, '0');
+    const dayStr = String(day).padStart(2, '0');
+    return `${year}-${month}-${dayStr}`;
   };
 
   const isToday = (day: number): boolean => {
@@ -125,21 +128,23 @@ export function CalendarView({
                 }
               }}
             >
-              <Text
-                style={[
-                  styles.dayText,
-                  isSelectedDay && styles.selectedDayText,
-                  isTodayDay && !isSelectedDay && styles.todayDayText,
-                  hasEntry && styles.hasEntryText,
-                ]}
-              >
-                {day}
-              </Text>
-              {hasEntry && (
-                <View style={styles.entryIndicator}>
-                  <Text style={styles.entryCount}>{entryCount}</Text>
-                </View>
-              )}
+              <View style={styles.dayContent}>
+                {hasEntry && (
+                  <View style={styles.entryIndicator}>
+                    <Text style={styles.entryCount}>{entryCount}</Text>
+                  </View>
+                )}
+                <Text
+                  style={[
+                    styles.dayText,
+                    isSelectedDay && styles.selectedDayText,
+                    isTodayDay && !isSelectedDay && styles.todayDayText,
+                    hasEntry && styles.hasEntryText,
+                  ]}
+                >
+                  {day}
+                </Text>
+              </View>
             </TouchableOpacity>
           );
         })}
@@ -181,6 +186,13 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: spacing.xs,
   },
+  dayContent: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
   selectedDay: {
     backgroundColor: colors.primary,
   },
@@ -205,19 +217,23 @@ const styles = StyleSheet.create({
   },
   entryIndicator: {
     position: 'absolute',
-    bottom: 2,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    top: 2,
+    right: 2,
+    minWidth: 14,
+    height: 14,
+    borderRadius: 7,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 3,
+    zIndex: 1,
   },
   entryCount: {
     ...typography.captionSmall,
     color: colors.text.inverse,
-    fontSize: 8,
+    fontSize: 9,
     fontWeight: '700',
+    lineHeight: 12,
   },
 });
 

@@ -19,6 +19,12 @@ export default function HistoryScreen() {
   const { entries, loading } = useMoodHistory();
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
+  // 날짜 표시 포맷 (YYYY-MM-DD -> M월 D일)
+  const formatDisplayDate = (dateStr: string): string => {
+    const [year, month, day] = dateStr.split('-');
+    return `${parseInt(month)}월 ${parseInt(day)}일 기록`;
+  };
+
   // 이번 주 기록
   const thisWeekEntries = useMemo(() => {
     const today = new Date();
@@ -97,23 +103,36 @@ export default function HistoryScreen() {
         {/* 타임라인 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            {selectedDate ? `${selectedDate} 기록` : '최근 기록'}
+            {selectedDate ? formatDisplayDate(selectedDate) : '최근 기록'}
           </Text>
-          {selectedDateEntries.length > 0 ? (
-            selectedDateEntries.map((entry) => (
-              <TimelineCard key={entry.id} entry={entry} />
-            ))
-          ) : entries.length > 0 ? (
-            entries.slice(0, 10).map((entry) => (
-              <TimelineCard key={entry.id} entry={entry} />
-            ))
+          {selectedDate ? (
+            // 날짜가 선택된 경우
+            selectedDateEntries.length > 0 ? (
+              selectedDateEntries.map((entry) => (
+                <TimelineCard key={entry.id} entry={entry} />
+              ))
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyText}>이 날짜에는 기록이 없어요</Text>
+                <Text style={styles.emptySubtext}>
+                  감정을 입력하면 여기에 기록됩니다
+                </Text>
+              </View>
+            )
           ) : (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>아직 기록이 없어요</Text>
-              <Text style={styles.emptySubtext}>
-                감정을 입력하면 여기에 기록됩니다
-              </Text>
-            </View>
+            // 날짜가 선택되지 않은 경우 - 최근 기록 표시
+            entries.length > 0 ? (
+              entries.slice(0, 10).map((entry) => (
+                <TimelineCard key={entry.id} entry={entry} />
+              ))
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyText}>아직 기록이 없어요</Text>
+                <Text style={styles.emptySubtext}>
+                  감정을 입력하면 여기에 기록됩니다
+                </Text>
+              </View>
+            )
           )}
         </View>
       </ScrollView>
